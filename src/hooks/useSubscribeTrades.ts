@@ -8,11 +8,12 @@ import { useTradesStore } from '@/stores/tradesStore'
 export function useSubscribeTrades(coin: string, isFetching: boolean) {
   const { connected, wsRef } = useHyperliquidContext()
   const pushTrades = useTradesStore((s) => s.pushTrades)
+  const reset = useTradesStore((s) => s.reset)
 
   useEffect(() => {
     const ws = wsRef.current
-
     if (!ws || ws.readyState !== WebSocket.OPEN || isFetching) return
+    reset()
 
     const handleMessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data) as WsMessage<HlTrade[]>
