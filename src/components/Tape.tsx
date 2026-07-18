@@ -21,9 +21,9 @@ export default function Tape() {
         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Tape</span>
       </div>
       <div ref={listRef} className="flex-1 overflow-y-auto min-h-0">
-        {recent.map((t, i) => (
+        {recent.map((t) => (
           <div
-            key={`${t.time}-${t.price}-${t.side}-${t.size}-${i}`}
+            key={t.hash || `${t.time}-${t.price}-${t.side}-${t.size}`}
             className="flex items-center gap-2 px-3 py-0.5 text-[11px] font-mono border-b border-zinc-900/50"
           >
             <span
