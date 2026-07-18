@@ -48,5 +48,5 @@ export const useCandlesStore = create<CandleStore>((set, get) => ({
 
 export function useCandles(): Candle[] {
   const version = useCandlesStore((s) => s.version)
-  return useMemo(() => toArray(), [version])
+  return useMemo(() => (void version, toArray()), [version])
 }

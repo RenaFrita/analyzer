@@ -56,5 +56,5 @@ export const useTradesStore = create<{
 
 export function useTrades(): Trade[] {
   const version = useTradesStore((s) => s.version)
-  return useMemo(() => toArray(), [version])
+  return useMemo(() => (void version, toArray()), [version])
 }
