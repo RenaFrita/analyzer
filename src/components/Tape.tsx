@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useTradesStore } from '@/stores/tradesStore'
+import { useTrades } from '@/stores/tradesStore'
 
 export default function Tape() {
   const listRef = useRef<HTMLDivElement>(null)
-  const trades = useTradesStore((s) => s.trades)
+  const trades = useTrades()
 
   useEffect(() => {
     if (listRef.current) {

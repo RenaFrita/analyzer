@@ -2,13 +2,13 @@
 
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import { useTradesStore } from '@/stores/tradesStore'
+import { useTrades } from '@/stores/tradesStore'
 import { useCandlesStore } from '@/stores/candlesStore'
 
 export default function VolumeDelta() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const trades = useTradesStore((s) => s.trades)
+  const trades = useTrades()
   const candles = useCandlesStore((s) => s.candles)
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useCandlesStore } from '../stores/candlesStore'
-import { fetchCandles } from '@/api/ candles'
+import { fetchCandles } from '@/api/candles'
 import { CandleInterval } from '@/lib/types'
 
 export function useLoadCandles(symbol: string, interval: CandleInterval) {

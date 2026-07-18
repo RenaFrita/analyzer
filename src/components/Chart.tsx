@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import { useTradesStore } from '@/stores/tradesStore'
+import { useTrades } from '@/stores/tradesStore'
 import { useCandlesStore } from '@/stores/candlesStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 
@@ -10,7 +10,7 @@ export default function Chart() {
   const candles = useCandlesStore((s) => s.candles)
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const trades = useTradesStore((s) => s.trades)
+  const trades = useTrades()
   const minBigTradeSize = useSettingsStore((s) => s.minBigTradeSize)
   const alarmEnabled = useSettingsStore((s) => s.alarmEnabled)
 

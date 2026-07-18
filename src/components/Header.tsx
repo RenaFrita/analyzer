@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useSettingsStore, COINS, TIME_FRAMES } from '@/stores/settingsStore'
-import { useTradesStore } from '@/stores/tradesStore'
+import { useTrades } from '@/stores/tradesStore'
 
 export default function Header() {
   const {
@@ -15,7 +15,7 @@ export default function Header() {
     setMinBigTradeSize,
     setAlarmEnabled,
   } = useSettingsStore()
-  const trades = useTradesStore((s) => s.trades)
+  const trades = useTrades()
 
   const cvd = useMemo(() => {
     if (trades.length === 0) return 0

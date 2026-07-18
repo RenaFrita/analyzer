@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useMemo } from 'react'
 import * as d3 from 'd3'
-import { useTradesStore } from '@/stores/tradesStore'
+import { useTrades } from '@/stores/tradesStore'
 import { useCandlesStore } from '@/stores/candlesStore'
 
 const BUCKETS = 40
@@ -10,7 +10,7 @@ const BUCKETS = 40
 export default function VolumeProfile() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const trades = useTradesStore((s) => s.trades)
+  const trades = useTrades()
   const candles = useCandlesStore((s) => s.candles)
 
   const valid = useMemo(
