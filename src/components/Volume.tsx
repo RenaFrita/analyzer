@@ -2,12 +2,12 @@
 
 import { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
-import { useCandlesStore } from '@/stores/candlesStore'
+import { useCandles } from '@/stores/candlesStore'
 
 export default function Volume() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const candles = useCandlesStore((s) => s.candles)
+  const candles = useCandles()
 
   useEffect(() => {
     const data = candles.filter(

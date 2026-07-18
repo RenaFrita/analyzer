@@ -1,34 +1,52 @@
-import { Candle } from '@/lib/types'
+import { useMemo } from 'react'
 import { create } from 'zustand'
+import type { Candle } from '@/lib/types'
+
+const MAX = 200
+const buf: Candle[] = new Array(MAX)
+let head = 0
+let count = 0
+
+function toArray(): Candle[] {
+  if (count === 0) return []
+  if (count < MAX) return buf.slice(0, count)
+  const arr = new Array<Candle>(count)
+  let idx = 0
+  for (let i = head; i < MAX; i++) arr[idx++] = buf[i]
+  for (let i = 0; i < head; i++) arr[idx++] = buf[i]
+  return arr
+}
 
 type CandleStore = {
-  candles: Candle[]
+  version: number
   setCandles: (candles: Candle[]) => void
   appendCandle: (candle: Candle) => void
 }
 
-export const useCandlesStore = create<CandleStore>((set) => ({
-  candles: [],
+export const useCandlesStore = create<CandleStore>((set, get) => ({
+  version: 0,
 
-  setCandles: (candles) => set({ candles }),
+  setCandles: (candles: Candle[]) => {
+    head = 0
+    count = Math.min(candles.length, MAX)
+    for (let i = 0; i < count; i++) buf[i] = candles[i]
+    set({ version: get().version + 1 })
+  },
 
-  appendCandle: (candle) =>
-    set((state) => {
-      const last = state.candles[state.candles.length - 1]
-
-      const candles =
-        last && last.time === candle.time
-          ? [
-              ...state.candles.slice(0, -1),
-              {
-                ...last,
-                ...candle,
-              },
-            ]
-          : [...state.candles, candle]
-
-      return {
-        candles: candles.slice(-200),
-      }
-    }),
+  appendCandle: (candle: Candle) => {
+    const last = count > 0 ? buf[(head - 1 + MAX) % MAX] : null
+    if (last && last.time === candle.time) {
+      buf[(head - 1 + MAX) % MAX] = candle
+    } else {
+      buf[head] = candle
+      head = (head + 1) % MAX
+      if (count < MAX) count++
+    }
+    set({ version: get().version + 1 })
+  },
 }))
+
+export function useCandles(): Candle[] {
+  const version = useCandlesStore((s) => s.version)
+  return useMemo(() => toArray(), [version])
+}
