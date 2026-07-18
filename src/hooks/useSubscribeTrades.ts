@@ -52,5 +52,5 @@ export function useSubscribeTrades(coin: string, isFetching: boolean) {
         )
       }
     }
-  }, [connected, wsRef, coin, pushTrades, isFetching])
+  }, [connected, wsRef, coin, pushTrades, isFetching, reset])
 }
