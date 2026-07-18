@@ -7,6 +7,9 @@ const buf: Candle[] = new Array(MAX)
 let head = 0
 let count = 0
 
+let cached: Candle[] = []
+let cachedVer = -1
+
 function toArray(): Candle[] {
   if (count === 0) return []
   if (count < MAX) return buf.slice(0, count)
@@ -30,6 +33,7 @@ export const useCandlesStore = create<CandleStore>((set, get) => ({
     head = 0
     count = Math.min(candles.length, MAX)
     for (let i = 0; i < count; i++) buf[i] = candles[i]
+    cachedVer = -1
     set({ version: get().version + 1 })
   },
 
@@ -42,11 +46,21 @@ export const useCandlesStore = create<CandleStore>((set, get) => ({
       head = (head + 1) % MAX
       if (count < MAX) count++
     }
+    cachedVer = -1
     set({ version: get().version + 1 })
   },
 }))
 
+function getAll(): Candle[] {
+  const ver = useCandlesStore.getState().version
+  if (ver !== cachedVer) {
+    cached = toArray()
+    cachedVer = ver
+  }
+  return cached
+}
+
 export function useCandles(): Candle[] {
   const version = useCandlesStore((s) => s.version)
-  return useMemo(() => (void version, toArray()), [version])
+  return useMemo(() => (void version, getAll()), [version])
 }

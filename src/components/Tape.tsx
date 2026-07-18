@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useTrades } from '@/stores/tradesStore'
+import { useLastTrades } from '@/stores/tradesStore'
 
 export default function Tape() {
   const listRef = useRef<HTMLDivElement>(null)
-  const trades = useTrades()
+  const trades = useLastTrades(100)
 
   useEffect(() => {
     if (listRef.current) {
@@ -13,7 +13,7 @@ export default function Tape() {
     }
   }, [trades.length])
 
-  const recent = trades.slice(-100).reverse()
+  const recent = trades.slice().reverse()
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
