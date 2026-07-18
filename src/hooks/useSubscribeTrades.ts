@@ -12,8 +12,10 @@ export function useSubscribeTrades(coin: string, isFetching: boolean) {
 
   useEffect(() => {
     const ws = wsRef.current
-    if (!ws || ws.readyState !== WebSocket.OPEN || isFetching) return
-    reset()
+    if (!ws || ws.readyState !== WebSocket.OPEN || isFetching) {
+      reset()
+      return
+    }
 
     const handleMessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data) as WsMessage<HlTrade[]>
