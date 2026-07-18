@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useHyperliquidContext } from '@/providers/HyperliquidContext'
 import type { HlTrade, WsMessage } from '@/lib/types'
 import { useTradesStore } from '@/stores/tradesStore'
@@ -9,13 +9,16 @@ export function useSubscribeTrades(coin: string, isFetching: boolean) {
   const { connected, wsRef } = useHyperliquidContext()
   const pushTrades = useTradesStore((s) => s.pushTrades)
   const reset = useTradesStore((s) => s.reset)
+  const prevCoin = useRef(coin)
 
   useEffect(() => {
-    const ws = wsRef.current
-    if (!ws || ws.readyState !== WebSocket.OPEN || isFetching) {
+    if (coin !== prevCoin.current) {
       reset()
-      return
+      prevCoin.current = coin
     }
+
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN || isFetching) return
 
     const handleMessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data) as WsMessage<HlTrade[]>
