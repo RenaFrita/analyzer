@@ -129,6 +129,8 @@ export default function Chart() {
           .attr('stroke', 'none')
       })
     }
+
+
   }, [candles, trades, minBigTradeSize])
 
   const bigTradeCountRef = useRef(0)

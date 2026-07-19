@@ -5,6 +5,14 @@ import * as d3 from 'd3'
 import { useTrades } from '@/stores/tradesStore'
 import { useCandles } from '@/stores/candlesStore'
 
+interface CumDeltaCandle {
+  time: number
+  open: number
+  high: number
+  low: number
+  close: number
+}
+
 export default function VolumeDelta() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -41,23 +49,43 @@ export default function VolumeDelta() {
       .domain([xDomain[0] - xPad, xDomain[1] + xPad])
       .range([0, innerW])
 
-    const deltaMap = new Map<number, number>()
-    for (const c of data) deltaMap.set(c.time, 0)
-    for (const t of trades) {
-      const bucket = [...deltaMap.keys()].reverse().find((k) => t.time >= k)
-      if (bucket) {
-        deltaMap.set(bucket, deltaMap.get(bucket)! + (t.side === 'buy' ? t.size : -t.size))
+    const sortedTrades = [...trades].sort((a, b) => a.time - b.time)
+
+    let runningCum = 0
+    let tradeIdx = 0
+    const cumCandles: CumDeltaCandle[] = []
+
+    for (let i = 0; i < data.length; i++) {
+      const candleStart = data[i].time
+      const candleEnd = i + 1 < data.length ? data[i + 1].time : Infinity
+
+      const open = runningCum
+      let high = open
+      let low = open
+
+      while (tradeIdx < sortedTrades.length && sortedTrades[tradeIdx].time < candleEnd) {
+        const t = sortedTrades[tradeIdx]
+        if (t.time >= candleStart) {
+          const delta = t.side === 'buy' ? t.size : -t.size
+          runningCum += delta
+          if (runningCum > high) high = runningCum
+          if (runningCum < low) low = runningCum
+        }
+        tradeIdx++
       }
+
+      cumCandles.push({ time: candleStart, open, high, low, close: runningCum })
     }
 
-    const deltas = data.map((c) => deltaMap.get(c.time) || 0)
-    const maxDelta = d3.max(deltas.map(Math.abs)) || 0
+    if (cumCandles.length === 0) return
+
+    const maxPrice = d3.max(cumCandles, (d) => d.high) || 0
+    const minPrice = d3.min(cumCandles, (d) => d.low) || 0
+    const yPad = Math.max(maxPrice - minPrice, 1) * 0.05
     const yScale = d3
       .scaleLinear()
-      .domain([-maxDelta * 1.1, maxDelta * 1.1])
+      .domain([minPrice - yPad, maxPrice + yPad])
       .range([innerH, 0])
-
-    const cw = Math.max(1, (innerW / data.length) * 0.6)
 
     const svg = d3.select(svgEl)
     svg.selectAll('*').remove()
@@ -65,43 +93,49 @@ export default function VolumeDelta() {
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
 
-    g.append('line')
-      .attr('x1', 0)
-      .attr('x2', innerW)
-      .attr('y1', yScale(0))
-      .attr('y2', yScale(0))
-      .attr('stroke', '#52525b')
-      .attr('stroke-width', 0.5)
-      .attr('stroke-dasharray', '3,3')
+    if (minPrice < 0 && maxPrice > 0) {
+      g.append('line')
+        .attr('x1', 0)
+        .attr('x2', innerW)
+        .attr('y1', yScale(0))
+        .attr('y2', yScale(0))
+        .attr('stroke', '#52525b')
+        .attr('stroke-width', 0.5)
+        .attr('stroke-dasharray', '3,3')
+    }
 
-    data.forEach((c) => {
+    const cw = Math.max(1, (innerW / cumCandles.length) * 0.6)
+    const candleWidth = Math.max(1, cw * 0.5)
+    const wickWidth = 1
+
+    cumCandles.forEach((c) => {
       const x = xScale(c.time)
       if (!isFinite(x)) return
-      const net = deltaMap.get(c.time) || 0
-      const color = net >= 0 ? '#22c55e' : '#ef4444'
-      const y0 = yScale(0)
-      const y1 = yScale(net)
-      const barH = Math.abs(y1 - y0)
+
+      const color = c.close >= c.open ? '#22c55e' : '#ef4444'
+      const yOpen = yScale(c.open)
+      const yClose = yScale(c.close)
+      const yHigh = yScale(c.high)
+      const yLow = yScale(c.low)
+      const bodyTop = Math.min(yOpen, yClose)
+      const bodyBottom = Math.max(yOpen, yClose)
+
+      g.append('line')
+        .attr('x1', x)
+        .attr('x2', x)
+        .attr('y1', yHigh)
+        .attr('y2', yLow)
+        .attr('stroke', color)
+        .attr('stroke-width', wickWidth)
+
       g.append('rect')
-        .attr('x', x - cw / 2)
-        .attr('width', cw)
-        .attr('y', Math.min(y0, y1))
-        .attr('height', Math.max(0, barH))
+        .attr('x', x - candleWidth / 2)
+        .attr('width', candleWidth)
+        .attr('y', bodyTop)
+        .attr('height', Math.max(1, bodyBottom - bodyTop))
         .attr('fill', color)
         .attr('opacity', 0.6)
     })
-
-    svg
-      .append('g')
-      .attr('transform', `translate(${width - margin.right},${margin.top})`)
-      .call(
-        d3
-          .axisRight(yScale)
-          .ticks(4)
-          .tickFormat((d) => (d as number).toFixed(0)),
-      )
-      .style('color', '#71717a')
-      .style('font-size', '10px')
 
     const timeSpan = xDomain[1] - xDomain[0]
     svg
@@ -118,6 +152,18 @@ export default function VolumeDelta() {
               return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}h`
             return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
           }),
+      )
+      .style('color', '#71717a')
+      .style('font-size', '10px')
+
+    svg
+      .append('g')
+      .attr('transform', `translate(${width - margin.right},${margin.top})`)
+      .call(
+        d3
+          .axisRight(yScale)
+          .ticks(4)
+          .tickFormat((d) => (d as number).toFixed(0)),
       )
       .style('color', '#71717a')
       .style('font-size', '10px')
